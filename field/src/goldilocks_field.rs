@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -158,6 +159,17 @@ impl PrimeField64 for GoldilocksField {
 
     fn to_noncanonical_u64(&self) -> u64 {
         self.0
+    }
+}
+
+impl Ord for GoldilocksField {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.to_canonical_u64().cmp(&other.to_canonical_u64())
+    }
+}
+impl PartialOrd for GoldilocksField {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 

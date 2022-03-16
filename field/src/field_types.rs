@@ -458,7 +458,7 @@ pub trait Field64: Field {
 }
 
 /// A finite field of prime order less than 2^64.
-pub trait PrimeField64: PrimeField + Field64 {
+pub trait PrimeField64: PrimeField + Field64 + Ord + PartialOrd {
     fn to_canonical_u64(&self) -> u64;
 
     fn to_noncanonical_u64(&self) -> u64;
