@@ -49,17 +49,19 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
+    use itertools::Itertools;
     use plonky2::field::field_types::Field;
     use plonky2::field::polynomial::PolynomialValues;
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use plonky2::util::timing::TimingTree;
-    use rand::{thread_rng, Rng};
+    use rand::{thread_rng, Rng, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
 
     use crate::all_stark::{AllStark, Table};
     use crate::config::StarkConfig;
     use crate::cpu::cpu_stark::CpuStark;
     use crate::cross_table_lookup::CrossTableLookup;
-    use crate::keccak::keccak_stark::KeccakStark;
+    use crate::keccak::keccak_stark::{KeccakStark, NUM_ROUNDS, INPUT_LIMBS};
     use crate::prover::prove;
     use crate::verifier::verify_proof;
 
@@ -74,22 +76,26 @@ mod tests {
         let cpu_stark = CpuStark::<F, D> {
             f: Default::default(),
         };
-        let cpu_rows = 1 << 4;
+        let cpu_rows = 1 << 6;
 
         let keccak_stark = KeccakStark::<F, D> {
             f: Default::default(),
         };
-        let keccak_rows = 1 << 3;
+        let keccak_rows = (NUM_ROUNDS + 1).next_power_of_two();
 
-        let mut cpu_trace = vec![PolynomialValues::zero(cpu_rows); 10];
-        let mut keccak_trace = vec![PolynomialValues::zero(keccak_rows); 7];
+        let mut cpu_trace = vec![PolynomialValues::<F>::zero(cpu_rows); 10];
+        
+        let mut rng = ChaCha8Rng::seed_from_u64(0x6feb51b7ec230f25);
 
-        let vs0 = (0..keccak_rows)
-            .map(F::from_canonical_usize)
-            .collect::<Vec<_>>();
-        let vs1 = (1..=keccak_rows)
-            .map(F::from_canonical_usize)
-            .collect::<Vec<_>>();
+        let num_inpts = 1;
+        let keccak_inputs = (0..num_inpts)
+            .map(|_| [0u64; INPUT_LIMBS].map(|_| rng.gen()))
+            .collect_vec();
+        let keccak_trace = keccak_stark.generate_trace(keccak_inputs);
+        
+        let vs0: Vec<_> = keccak_trace[3].values[..].into();
+        let vs1: Vec<_> = keccak_trace[5].values[..].into();
+        
         let start = thread_rng().gen_range(0..cpu_rows - keccak_rows);
 
         let default = vec![F::ONE; 2];
@@ -98,9 +104,6 @@ mod tests {
         cpu_trace[2].values[start..start + keccak_rows].copy_from_slice(&vs0);
         cpu_trace[4].values = vec![default[1]; cpu_rows];
         cpu_trace[4].values[start..start + keccak_rows].copy_from_slice(&vs1);
-
-        keccak_trace[3].values[..].copy_from_slice(&vs0);
-        keccak_trace[5].values[..].copy_from_slice(&vs1);
 
         let cross_table_lookups = vec![CrossTableLookup {
             looking_table: Table::Cpu,
