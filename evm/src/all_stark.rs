@@ -61,7 +61,7 @@ mod tests {
     use crate::config::StarkConfig;
     use crate::cpu::cpu_stark::CpuStark;
     use crate::cross_table_lookup::CrossTableLookup;
-    use crate::keccak::keccak_stark::{KeccakStark, NUM_ROUNDS, INPUT_LIMBS};
+    use crate::keccak::keccak_stark::{KeccakStark, INPUT_LIMBS, NUM_ROUNDS};
     use crate::prover::prove;
     use crate::verifier::verify_proof;
 
@@ -84,7 +84,7 @@ mod tests {
         let keccak_rows = (NUM_ROUNDS + 1).next_power_of_two();
 
         let mut cpu_trace = vec![PolynomialValues::<F>::zero(cpu_rows); 10];
-        
+
         let mut rng = ChaCha8Rng::seed_from_u64(0x6feb51b7ec230f25);
 
         let num_inpts = 1;
@@ -92,10 +92,10 @@ mod tests {
             .map(|_| [0u64; INPUT_LIMBS].map(|_| rng.gen()))
             .collect_vec();
         let keccak_trace = keccak_stark.generate_trace(keccak_inputs);
-        
+
         let vs0: Vec<_> = keccak_trace[3].values[..].into();
         let vs1: Vec<_> = keccak_trace[5].values[..].into();
-        
+
         let start = thread_rng().gen_range(0..cpu_rows - keccak_rows);
 
         let default = vec![F::ONE; 2];
