@@ -102,7 +102,7 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
     proof_subject_val: F,
     // proof_subject_index_val: u32,
     // merkle_tree_path_val: &[F; 4],
-    merkle_tree_path_val: &[&[F; 4]],
+    merkle_tree_path_val: &Vec<&[F]>,
     targets: MerkleMembershipProofTargets,
 ) {
 
@@ -113,32 +113,34 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
         proof_verification_result,
     } = targets;
 
-    // let gf = GF(0x12345678);
+    assert_eq!(merkle_tree_path.len(), merkle_tree_path_val.len());
+
     pw.set_target(proof_subject, proof_subject_val);
 
-    let h_in = vec![proof_subject_val];
-    let h_out = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&h_in, 4);
-    // let h_exp = vec![GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903), GF(9947949590738376399)];
-    // assert_eq!(h_exp, h_out);
-
-    // h0 is identical to h_out
-    // let h0: HashOut<F> = HashOut::from_vec(vec![GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903), GF(9947949590738376399)]);
-    // let h0: HashOut<F> = HashOut::from_vec(h_out.clone());
-    let h0: HashOut<F> = HashOut::from_vec(merkle_tree_path_val[0].to_vec());
-    let h_out_0 = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&[HashOut::from_vec(h_out).elements, h0.elements].concat(), 4);
-    // let h_out_0_exp = vec![GF(2791643930465109725), GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)];
-    pw.set_hash_target(merkle_tree_path[0], h0);
-    // assert_eq!(h_out_0, h_out_0_exp);
-
-    // let h1: HashOut<F> = HashOut::rand(); // rand() is not good here!; how to calc hash values ?
-    // pw.set_hash_target(merkle_tree_path[1], h1);
-    // let h2: HashOut<F> = HashOut::rand(); // rand() is not good here!; how to calc hash values ?
-    // pw.set_hash_target(merkle_tree_path[2], h2);
-
-    let mtr: HashOut<F> = HashOut::from_vec(merkle_tree_path_val.last().unwrap().to_vec());
-    pw.set_hash_target(*(merkle_tree_path.last().unwrap()), mtr);
+    for i in 0..merkle_tree_path.len() {
+        pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(merkle_tree_path_val[i].to_vec()));
+    }
 }
+/*
+pub fn build_merkle_tree_path_val<F: RichField + Extendable<D>, const D: usize>(
+    value: F,
+    sibling_hash_val: &[F],
+    merkle_tree_hight: u32
+) -> Vec<&[F]> {
+    let aux = vec![value];
+    let mut aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&aux, 4);
 
+    let mut v = vec![sibling_hash_val];
+
+    for _ in 0..merkle_tree_hight {
+        let elements = [aux, v.last().unwrap().to_vec()].concat();
+        aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&elements, 4);
+        v.push(&aux[..]);
+    }
+
+    v
+}
+*/
 fn main() -> Result<()> {
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
@@ -157,39 +159,27 @@ fn main() -> Result<()> {
 
     // Provide initial values.
     let mut pw = PartialWitness::<GF>::new();
+
+    let merkle_tree_path_val =
+/*
+        build_merkle_tree_path_val::<F, D>(
+            GF(0x12345678),
+            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)],
+            2,
+        );
+*/
+        vec![
+            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)][..],
+            &[GF(2791643930465109725),  GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)][..],
+        ];
+
     fill_circuits::<F, D>(
         &mut pw,
         GF(0x12345678),
-        &[
-            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)],
-            &[GF(2791643930465109725),  GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)],
-        ],
+        &merkle_tree_path_val,
         targets,
     );
-/*
-    let gf = GF(0x12345678);
-    pw.set_target(proof_subject, gf);
 
-    let h_in = vec![gf, GF(0), GF(0), GF(0)];
-    let h_out = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&h_in, 4);
-    let h_exp = vec![GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903), GF(9947949590738376399)];
-    assert_eq!(h_exp, h_out);
-
-    // let h0: HashOut<F> = HashOut::from_vec(vec![gf, GF(0), GF(0), GF(0)]);
-    let h0: HashOut<F> = HashOut::from_vec(vec![GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903), GF(9947949590738376399)]);
-    let h_out_0 = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&[HashOut::from_vec(h_out).elements, h0.elements].concat(), 4);
-    let h_out_0_exp = vec![GF(2791643930465109725), GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)];
-    pw.set_hash_target(merkle_tree_path[0], h0);
-    assert_eq!(h_out_0, h_out_0_exp);
-
-    // let h1: HashOut<F> = HashOut::rand(); // rand() is not good here!; how to calc hash values ?
-    // pw.set_hash_target(merkle_tree_path[1], h1);
-    // let h2: HashOut<F> = HashOut::rand(); // rand() is not good here!; how to calc hash values ?
-    // pw.set_hash_target(merkle_tree_path[2], h2);
-
-    let mtr: HashOut<F> = HashOut::from_vec(h_out_0);
-    pw.set_hash_target(*(merkle_tree_path.last().unwrap()), mtr);
-*/
     let data = builder.build::<C>();
     let proof = data.prove(pw)?;
 
