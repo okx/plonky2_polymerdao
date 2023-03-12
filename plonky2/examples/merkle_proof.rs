@@ -101,7 +101,6 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
     pw: &mut PartialWitness<F>,
     proof_subject_val: F,
     // proof_subject_index_val: u32,
-    // merkle_tree_path_val: &[F; 4],
     merkle_tree_path_val: &Vec<Box<Vec<F>>>,
     targets: MerkleMembershipProofTargets,
 ) {
@@ -118,25 +117,26 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
     pw.set_target(proof_subject, proof_subject_val);
 
     for i in 0..merkle_tree_path.len() {
-        // pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(merkle_tree_path_val[i].to_vec()));
         pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(*merkle_tree_path_val[i].clone()));
     }
 }
 
-pub fn build_merkle_tree_path_val<'a, F: RichField + Extendable<D>, const D: usize>(
+pub fn build_merkle_tree_path_val<F: RichField + Extendable<D>, const D: usize>(
     value: F,
     sibling_hash_val: Vec<&[F]>,
 ) -> Vec<Box<Vec<F>>> {
     let aux = vec![value];
     let mut aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&aux, 4);
 
-    let mut v = vec![Box::new(sibling_hash_val[0].to_vec())];
+    let mut v = Vec::new();
 
     for shv in sibling_hash_val {
+        v.push(Box::new(shv.to_vec()));
         let elements = [aux, shv.to_vec()].concat();
         aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&elements, 4);
-        v.push(Box::new(aux.clone()));
     }
+
+    v.push(Box::new(aux));
 
     v
 }
@@ -154,15 +154,10 @@ fn main() -> Result<()> {
     let merkle_tree_path_raw_data =
         vec![
             &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)] as &[F],
+            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)] as &[F],
         ];
 
     let merkle_tree_path_val = build_merkle_tree_path_val::<F, D>(proof_subject, merkle_tree_path_raw_data);
-/*
-        vec![
-            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)][..],
-            &[GF(2791643930465109725),  GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)][..],
-        ];
-*/
 
     let merkle_tree_hight = merkle_tree_path_val.len() as u32;
 
@@ -190,7 +185,7 @@ fn main() -> Result<()> {
 
     let result_idx = 1 + merkle_tree_hight * 4;
     // assert_eq!(proof.public_inputs[5..9], proof.public_inputs[9..13]);
-    assert_eq!(result_idx, 9);
+    assert_eq!(result_idx, 13);
     assert_eq!(proof.public_inputs[result_idx as usize], GF(1));
 
     println!("proof.public_inputs[{result_idx}] = {}", proof.public_inputs[result_idx as usize]);
