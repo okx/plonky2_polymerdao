@@ -102,7 +102,7 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
     proof_subject_val: F,
     // proof_subject_index_val: u32,
     // merkle_tree_path_val: &[F; 4],
-    merkle_tree_path_val: &Vec<&[F]>,
+    merkle_tree_path_val: &Vec<Box<Vec<F>>>,
     targets: MerkleMembershipProofTargets,
 ) {
 
@@ -118,29 +118,29 @@ pub fn fill_circuits<F: RichField + Extendable<D>, const D: usize>(
     pw.set_target(proof_subject, proof_subject_val);
 
     for i in 0..merkle_tree_path.len() {
-        pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(merkle_tree_path_val[i].to_vec()));
+        // pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(merkle_tree_path_val[i].to_vec()));
+        pw.set_hash_target(merkle_tree_path[i], HashOut::from_vec(*merkle_tree_path_val[i].clone()));
     }
 }
-/*
-pub fn build_merkle_tree_path_val<F: RichField + Extendable<D>, const D: usize>(
+
+pub fn build_merkle_tree_path_val<'a, F: RichField + Extendable<D>, const D: usize>(
     value: F,
-    sibling_hash_val: &[F],
-    merkle_tree_hight: u32
-) -> Vec<&[F]> {
+    sibling_hash_val: Vec<&[F]>,
+) -> Vec<Box<Vec<F>>> {
     let aux = vec![value];
     let mut aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&aux, 4);
 
-    let mut v = vec![sibling_hash_val];
+    let mut v = vec![Box::new(sibling_hash_val[0].to_vec())];
 
-    for _ in 0..merkle_tree_hight {
-        let elements = [aux, v.last().unwrap().to_vec()].concat();
+    for shv in sibling_hash_val {
+        let elements = [aux, shv.to_vec()].concat();
         aux = hashing::hash_n_to_m_no_pad::<F, PoseidonPermutation>(&elements, 4);
-        v.push(&aux[..]);
+        v.push(Box::new(aux.clone()));
     }
 
     v
 }
-*/
+
 fn main() -> Result<()> {
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
@@ -150,7 +150,21 @@ fn main() -> Result<()> {
     let config = CircuitConfig::standard_recursion_config();
     let mut builder = CircuitBuilder::<F, D>::new(config);
 
-    let merkle_tree_hight = 2;
+    let proof_subject = GF(0x12345678);
+    let merkle_tree_path_raw_data =
+        vec![
+            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)] as &[F],
+        ];
+
+    let merkle_tree_path_val = build_merkle_tree_path_val::<F, D>(proof_subject, merkle_tree_path_raw_data);
+/*
+        vec![
+            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)][..],
+            &[GF(2791643930465109725),  GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)][..],
+        ];
+*/
+
+    let merkle_tree_hight = merkle_tree_path_val.len() as u32;
 
     let targets = make_verify_circuits(
         &mut builder,
@@ -160,22 +174,9 @@ fn main() -> Result<()> {
     // Provide initial values.
     let mut pw = PartialWitness::<GF>::new();
 
-    let merkle_tree_path_val =
-/*
-        build_merkle_tree_path_val::<F, D>(
-            GF(0x12345678),
-            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)],
-            2,
-        );
-*/
-        vec![
-            &[GF(15612627474000122082), GF(14060194962823407015), GF(850778232954936903),  GF(9947949590738376399)][..],
-            &[GF(2791643930465109725),  GF(12981621290817861018), GF(8052271923137798546), GF(11667829020321673470)][..],
-        ];
-
     fill_circuits::<F, D>(
         &mut pw,
-        GF(0x12345678),
+        proof_subject,
         &merkle_tree_path_val,
         targets,
     );
@@ -189,6 +190,7 @@ fn main() -> Result<()> {
 
     let result_idx = 1 + merkle_tree_hight * 4;
     // assert_eq!(proof.public_inputs[5..9], proof.public_inputs[9..13]);
+    assert_eq!(result_idx, 9);
     assert_eq!(proof.public_inputs[result_idx as usize], GF(1));
 
     println!("proof.public_inputs[{result_idx}] = {}", proof.public_inputs[result_idx as usize]);
