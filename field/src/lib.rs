@@ -23,6 +23,7 @@ pub mod fft;
 pub mod goldilocks_extensions;
 pub mod goldilocks_field;
 pub mod interpolation;
+pub mod nonnative;
 pub mod ops;
 pub mod packable;
 pub mod packed;

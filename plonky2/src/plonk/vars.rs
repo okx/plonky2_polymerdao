@@ -2,10 +2,12 @@ use core::ops::Range;
 
 use crate::field::extension::algebra::ExtensionAlgebra;
 use crate::field::extension::{Extendable, FieldExtension};
+use crate::field::nonnative::algebra::NonnativeAlgebra;
 use crate::field::packed::PackedField;
 use crate::field::types::Field;
 use crate::hash::hash_types::{HashOut, HashOutTarget, RichField};
 use crate::iop::ext_target::{ExtensionAlgebraTarget, ExtensionTarget};
+use crate::iop::nonnative_target::NonnativeAlgebraTarget;
 use crate::util::strided_view::PackedStridedView;
 
 #[derive(Debug, Copy, Clone)]
@@ -52,6 +54,15 @@ impl<'a, F: RichField + Extendable<D>, const D: usize> EvaluationVars<'a, F, D> 
         debug_assert_eq!(wire_range.len(), D);
         let arr = self.local_wires[wire_range].try_into().unwrap();
         ExtensionAlgebra::from_basefield_array(arr)
+    }
+
+    pub fn get_local_nonnative_algebra(
+        &self,
+        wire_range: Range<usize>,
+    ) -> NonnativeAlgebra<F::Extension, D> {
+        debug_assert_eq!(wire_range.len(), D);
+        let arr = self.local_wires[wire_range].try_into().unwrap();
+        NonnativeAlgebra::from_basefield_array(arr)
     }
 
     pub fn remove_prefix(&mut self, num_selectors: usize) {
@@ -120,6 +131,15 @@ impl<'a, F: Field> EvaluationVarsBaseBatch<'a, F> {
 
 impl<'a, F: Field> EvaluationVarsBase<'a, F> {
     pub fn get_local_ext<const D: usize>(&self, wire_range: Range<usize>) -> F::Extension
+    where
+        F: RichField + Extendable<D>,
+    {
+        debug_assert_eq!(wire_range.len(), D);
+        let arr = self.local_wires.view(wire_range).try_into().unwrap();
+        F::Extension::from_basefield_array(arr)
+    }
+
+    pub fn get_local_nonnative<const D: usize>(&self, wire_range: Range<usize>) -> F::Extension
     where
         F: RichField + Extendable<D>,
     {
@@ -229,5 +249,11 @@ impl<'a, const D: usize> EvaluationTargets<'a, D> {
         debug_assert_eq!(wire_range.len(), D);
         let arr = self.local_wires[wire_range].try_into().unwrap();
         ExtensionAlgebraTarget(arr)
+    }
+
+    pub fn get_local_nonnative_algebra(&self, wire_range: Range<usize>) -> NonnativeAlgebraTarget<D> {
+        debug_assert_eq!(wire_range.len(), D);
+        let arr = self.local_wires[wire_range].try_into().unwrap();
+        NonnativeAlgebraTarget(arr)
     }
 }

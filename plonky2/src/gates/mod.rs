@@ -3,6 +3,7 @@
 
 pub mod arithmetic_base;
 pub mod arithmetic_extension;
+pub mod arithmetic_nonnative;
 pub mod base_sum;
 pub mod constant;
 pub mod exponentiation;

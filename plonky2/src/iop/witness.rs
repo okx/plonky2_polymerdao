@@ -11,6 +11,7 @@ use crate::fri::witness_util::set_fri_proof_target;
 use crate::hash::hash_types::{HashOut, HashOutTarget, MerkleCapTarget, RichField};
 use crate::hash::merkle_tree::MerkleCap;
 use crate::iop::ext_target::ExtensionTarget;
+use crate::iop::nonnative_target::NonnativeTarget;
 use crate::iop::target::{BoolTarget, Target};
 use crate::iop::wire::Wire;
 use crate::plonk::circuit_data::{VerifierCircuitTarget, VerifierOnlyCircuitData};
@@ -63,6 +64,32 @@ pub trait WitnessWrite<F: Field> {
         ets.iter()
             .zip(values)
             .for_each(|(&et, &v)| self.set_extension_target(et, v));
+    }
+
+    fn set_nonnative_target<const D: usize>(&mut self, et: NonnativeTarget<D>, value: F::Extension)
+    where
+        F: RichField + Extendable<D>,
+    {
+        self.set_target_arr(et.0, value.to_basefield_array());
+    }
+/*
+    fn set_target_arr<const N: usize>(&mut self, targets: [Target; N], values: [F; N]) {
+        (0..N).for_each(|i| {
+            self.set_target(targets[i], values[i]);
+        });
+    }
+*/
+    fn set_nonnative_targets<const D: usize>(
+        &mut self,
+        ets: &[NonnativeTarget<D>],
+        values: &[F::Extension],
+    ) where
+        F: RichField + Extendable<D>,
+    {
+        debug_assert_eq!(ets.len(), values.len());
+        ets.iter()
+            .zip(values)
+            .for_each(|(&et, &v)| self.set_nonnative_target(et, v));
     }
 
     fn set_bool_target(&mut self, target: BoolTarget, value: bool) {
@@ -204,6 +231,24 @@ pub trait Witness<F: Field>: WitnessWrite<F> {
     {
         ets.iter()
             .map(|&et| self.get_extension_target(et))
+            .collect()
+    }
+
+    fn get_nonnative_target<const D: usize>(&self, et: NonnativeTarget<D>) -> F::Extension
+    where
+        F: RichField + Extendable<D>,
+    {
+        F::Extension::from_basefield_array(
+            self.get_targets(&et.to_target_array()).try_into().unwrap(),
+        )
+    }
+
+    fn get_nonnative_targets<const D: usize>(&self, ets: &[NonnativeTarget<D>]) -> Vec<F::Extension>
+    where
+        F: RichField + Extendable<D>,
+    {
+        ets.iter()
+            .map(|&et| self.get_nonnative_target(et))
             .collect()
     }
 

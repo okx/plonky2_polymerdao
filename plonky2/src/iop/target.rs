@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use core::ops::Range;
 
 use crate::iop::ext_target::ExtensionTarget;
+use crate::iop::nonnative_target::NonnativeTarget;
 use crate::iop::wire::Wire;
 use crate::plonk::circuit_data::CircuitConfig;
 
@@ -45,6 +46,13 @@ impl Target {
         let mut arr = [zero; D];
         arr[0] = self;
         ExtensionTarget(arr)
+    }
+
+    /// Conversion to an `NonnativeTarget`.
+    pub fn to_nonnative_target<const D: usize>(self, zero: Self) -> NonnativeTarget<D> {
+        let mut arr = [zero; D];
+        arr[0] = self;
+        NonnativeTarget(arr)
     }
 }
 
