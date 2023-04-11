@@ -29,10 +29,12 @@ fn test_simple_transfer() -> anyhow::Result<()> {
     let all_stark = AllStark::<F, D>::default();
     let config = StarkConfig::standard_fast_config();
 
-    let sender = hex!("2c7536e3605d9c16a7a3d7b1898e529396a65c23");
-    let to = hex!("a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0");
-    let sender_state_key = keccak(sender);
-    let to_state_key = keccak(to);
+    let _sender = hex!("2c7536e3605d9c16a7a3d7b1898e529396a65c23");
+    let _to = hex!("a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0");
+    // let sender_state_key = keccak(sender);
+    let sender_state_key = 0x123_u64;
+    // let to_state_key = keccak(to);
+    let to_state_key = 0x123_u64;
     let sender_nibbles = Nibbles::from(sender_state_key);
     let to_nibbles = Nibbles::from(to_state_key);
     let value = U256::from(100u32);

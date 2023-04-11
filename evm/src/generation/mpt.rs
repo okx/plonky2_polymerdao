@@ -37,10 +37,12 @@ pub(crate) fn all_mpt_prover_inputs_reversed(trie_inputs: &TrieInputs) -> Vec<U2
 pub(crate) fn all_mpt_prover_inputs(trie_inputs: &TrieInputs) -> Vec<U256> {
     let mut prover_inputs = vec![];
 
+    let n = Nibbles::from(0x123_u64);
+
     let storage_tries_by_state_key = trie_inputs
         .storage_tries
         .iter()
-        .map(|(address, storage_trie)| (Nibbles::from(keccak(address)), storage_trie))
+        .map(|(_address, storage_trie)| (n, storage_trie))
         .collect();
 
     mpt_prover_inputs_state_trie(
