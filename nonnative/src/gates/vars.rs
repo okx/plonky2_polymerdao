@@ -73,7 +73,9 @@ impl<'a, F: RichField> FieldToBigUint for EvaluationVarsBase<'a, F> {
         &self,
         wire_range: Range<usize>,
     ) -> BigUint {
+println!("wire_range = {:#?}", wire_range);
         let arr: Vec<u32> = wire_range.map(|i| self.local_wires[i].to_canonical_u64() as u32).collect();
+println!("arr = {:?}", arr);
         BigUint::new(arr)
     }
 }

@@ -47,6 +47,7 @@ pub struct MulBigUintGate<F: RichField + Extendable<D>, const D: usize> {
 impl<F: RichField + Extendable<D>, const D: usize> MulBigUintGate<F, D> {
     pub fn new(multiplicand0_num_limbs: usize, multiplicand1_num_limbs: usize) -> Self {
         let total_input_limbs = multiplicand0_num_limbs + multiplicand1_num_limbs;
+println!("total_input_limbs  = {}", total_input_limbs);
         Self {
             multiplicand0_num_limbs,
             multiplicand1_num_limbs,
@@ -117,7 +118,12 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for MulBigUintGate
         let multiplicand_0 = vars.get_local_biguint(self.wires_multiplicand_0());
         let multiplicand_1 = vars.get_local_biguint(self.wires_multiplicand_1());
         let output = vars.get_local_biguint(self.wires_output());
+println!("m0 = {:#?}", multiplicand_0);
+println!("m1 = {:#?}", multiplicand_1);
         let computed_output = multiplicand_0 * multiplicand_1;
+
+println!("ou = {:#?}", output);
+println!("co = {:#?}", computed_output);
 
         yield_constr.many(<BigUint as BigUintToVecField<F>>::to_basefield_array(&(output - computed_output)));
     }
@@ -230,6 +236,8 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F>
                                 })
                                 .collect();
                                         
+println!("generator m0 = {:?}", m0);
+
         let m1: Vec<u32> = self.gate
                                 .wires_multiplicand_1()
                                 .map(|i| {
@@ -238,7 +246,9 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F>
                                         .to_canonical_u64() as u32
                                 })
                                 .collect();
-                                        
+
+println!("generator m1 = {:?}", m1);
+
         let mut to_add = vec![vec![]; self.gate.total_input_limbs];
 
         let m0_num_limbs = self.gate.multiplicand0_num_limbs;
@@ -272,6 +282,7 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F>
         let output_limb_values: Vec<F> = limb_values.iter().map(|v| F::from_canonical_u32(*v)).collect();
 
         for (l, v) in output_limbs.iter().zip(output_limb_values) {
+println!("generator output = {}", v);
             out_buffer.set_target(*l, v);
         }
     }
