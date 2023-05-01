@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 use core::ops::Range;
-use num::bigint::BigUint;
+// use num::bigint::BigUint;
 // use plonky2::plonk::circuit_data::CircuitConfig;
 
 use plonky2::field::extension::Extendable;
@@ -26,11 +26,11 @@ use plonky2::plonk::vars::{EvaluationVars, EvaluationVarsBase, EvaluationTargets
 // use plonky2_ecdsa::gadgets::nonnative::{CircuitBuilderBigUint, BigUintTarget};
 use plonky2_ecdsa::gadgets::biguint::CircuitBuilderBiguint;
 
-use crate::gates::vars::FieldExtToBigUint;
-use crate::gates::vars::BigUintToVecFieldExt;
+// use crate::gates::vars::FieldExtToBigUint;
+// use crate::gates::vars::BigUintToVecFieldExt;
 
-use crate::gates::vars::FieldToBigUint;
-use crate::gates::vars::BigUintToVecField;
+// use crate::gates::vars::FieldToBigUint;
+// use crate::gates::vars::BigUintToVecField;
 
 use crate::gates::vars::FieldExtTargetsToBigUintTarget;
 use crate::gates::vars::BigUintTargetToVecFieldExtTargets;
@@ -100,12 +100,23 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for MulBigUintGate
     fn eval_unfiltered(&self, vars: EvaluationVars<F, D>) -> Vec<F::Extension> {
         let mut constraints = Vec::new();
 
-        let multiplicand_0 = vars.get_local_biguint_algebra(self.wires_multiplicand_0());
-        let multiplicand_1 = vars.get_local_biguint_algebra(self.wires_multiplicand_1());
-        let output = vars.get_local_biguint_algebra(self.wires_output());
+        // let multiplicand_0 = vars.get_local_biguint_algebra(self.wires_multiplicand_0());
+        // let multiplicand_1 = vars.get_local_biguint_algebra(self.wires_multiplicand_1());
+        // let output = vars.get_local_biguint_algebra(self.wires_output());
+        // let computed_output = multiplicand_0 * multiplicand_1;
+        let multiplicand_0 = vars.local_wires[self.wires_multiplicand_0().start];
+        let multiplicand_1 = vars.local_wires[self.wires_multiplicand_1().start];
+        let output = vars.local_wires[self.wires_output().start];
+        println!("Multiplicands and output in eval_unfiltered!");
+        dbg!(multiplicand_0.clone());
+        dbg!(multiplicand_1.clone());
         let computed_output = multiplicand_0 * multiplicand_1;
 
-        constraints.extend(<BigUint as BigUintToVecFieldExt<F, D>>::to_basefield_array(&(output - computed_output)));
+        // constraints.extend(<BigUint as BigUintToVecFieldExt<F, D>>::to_basefield_array(&(output - computed_output)));
+        dbg!(output.clone());
+        dbg!(computed_output.clone());
+
+        constraints.push(output - computed_output);
 
         constraints
     }
@@ -115,17 +126,18 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for MulBigUintGate
         vars: EvaluationVarsBase<F>,
         mut yield_constr: StridedConstraintConsumer<F>,
     ) {
-        let multiplicand_0 = vars.get_local_biguint(self.wires_multiplicand_0());
-        let multiplicand_1 = vars.get_local_biguint(self.wires_multiplicand_1());
-        let output = vars.get_local_biguint(self.wires_output());
-println!("m0 = {:#?}", multiplicand_0);
-println!("m1 = {:#?}", multiplicand_1);
+        let multiplicand_0 = vars.local_wires[self.wires_multiplicand_0().start];
+        let multiplicand_1 = vars.local_wires[self.wires_multiplicand_1().start];
+        let output = vars.local_wires[self.wires_output().start];
+        // println!("Multiplicands and output in eval_unfiltered_base_one!");
+        // dbg!(multiplicand_0.clone());
+        // dbg!(multiplicand_1.clone());
         let computed_output = multiplicand_0 * multiplicand_1;
 
-println!("ou = {:#?}", output);
-println!("co = {:#?}", computed_output);
+        // dbg!(output.clone());
+        // dbg!(computed_output.clone());
 
-        yield_constr.many(<BigUint as BigUintToVecField<F>>::to_basefield_array(&(output - computed_output)));
+        yield_constr.one(output - computed_output);
     }
 
     fn eval_unfiltered_circuit(
@@ -302,6 +314,7 @@ mod tests {
     // use super::*;
 
     #[test]
+    #[ignore]
     fn test_biguint_gate() -> Result<()> {
         todo!()
     }

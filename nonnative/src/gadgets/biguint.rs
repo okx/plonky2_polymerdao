@@ -66,10 +66,19 @@ mod tests {
         type F = <C as GenericConfig<D>>::F;
 
         let x_value = BigUint::from_slice(&[
-            0x00000003,
+            // 0x00000003,
+            0x11111111,
+            0x11111111,
+            0x11111111,
+            0x11111111,
+            0x11111111,
+            0x11111111,
+            0x11111111,
+            0x11111111,
         ]);
         let y_value = BigUint::from_slice(&[
-            0x00000005,
+            // 0x00000005,
+            0x00000008,
         ]);
         let expected_z_value = &x_value * &y_value;
 

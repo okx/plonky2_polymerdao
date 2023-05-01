@@ -12,7 +12,7 @@ crate-type = ["lib"]
 anyhow = { version = "1.0.40", default-features = false }
 itertools = { version = "0.10.0", default-features = false }
 num = { version = "0.4.0", default-features = false }
-plonky2 = { path = "../plonky2", default-features = false }
+plonky2 = { path = "../plonky2", default-features = false, features = ["std"] }
 plonky2_ecdsa = { path = "../ecdsa", default-features = false }
 plonky2_u32 = { path = "../u32", default-features = false }
 slice-of-array = "0.3.2"
