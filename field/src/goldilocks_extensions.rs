@@ -21,6 +21,11 @@ impl Extendable<2> for GoldilocksField {
     // DTH_ROOT = W^((ORDER - 1)/2)
     const DTH_ROOT: Self = Self(18446744069414584320);
 
+    const EXT_NONRESIDUE: [Self; 2] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C1: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C2: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT12_C1: [Self; 6] = todo!();
+
     const EXT_MULTIPLICATIVE_GROUP_GENERATOR: [Self; 2] =
         [Self(18081566051660590251), Self(16121475356294670766)];
 
@@ -44,6 +49,11 @@ impl Extendable<4> for GoldilocksField {
 
     // DTH_ROOT = W^((ORDER - 1)/4)
     const DTH_ROOT: Self = Self(281474976710656);
+
+    const EXT_NONRESIDUE: [Self; 4] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C1: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C2: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT12_C1: [Self; 6] = todo!();
 
     const EXT_MULTIPLICATIVE_GROUP_GENERATOR: [Self; 4] = [
         Self(5024755240244648895),
@@ -73,6 +83,11 @@ impl Extendable<5> for GoldilocksField {
 
     // DTH_ROOT = W^((ORDER - 1)/5)
     const DTH_ROOT: Self = Self(1041288259238279555);
+
+    const EXT_NONRESIDUE: [Self; 5] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C1: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT6_C2: [Self; 6] = todo!();
+    const FROBENIUS_COEFFS_EXT12_C1: [Self; 6] = todo!();
 
     const EXT_MULTIPLICATIVE_GROUP_GENERATOR: [Self; 5] = [
         Self(2899034827742553394),
