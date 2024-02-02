@@ -1,6 +1,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::needless_range_loop)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(int_roundings)]
 
 extern crate alloc;
 

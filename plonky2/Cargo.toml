@@ -11,11 +11,12 @@ edition = "2021"
 default-run = "generate_constants"
 
 [features]
-default = ["gate_testing", "parallel", "rand_chacha", "std", "timing"]
+default = ["gate_testing", "parallel", "rand_chacha", "std"]
 gate_testing = []
 parallel = ["hashbrown/rayon", "maybe_rayon/parallel"]
 std = ["anyhow/std", "rand/std"]
 timing = ["std"]
+cuda =["cryptography_cuda"]
 
 [dependencies]
 ahash = { version = "0.7.6", default-features = false, features = ["compile-time-rng"] } # NOTE: Be sure to keep this version the same as the dependency in `hashbrown`.
@@ -33,6 +34,7 @@ rand_chacha = { version = "0.3.1", optional = true, default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 static_assertions = { version = "1.1.0", default-features = false }
 unroll = { version = "0.1.5", default-features = false }
+cryptography_cuda ={path="../depends/cryptography_cuda", optional=true}
 
 [dev-dependencies]
 criterion = { version = "0.4.0", default-features = false }

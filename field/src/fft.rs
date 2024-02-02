@@ -1,6 +1,8 @@
 use alloc::vec::Vec;
 use core::cmp::{max, min};
 
+#[cfg(feature = "cuda")]
+use cryptography_cuda::{ntt, types::NTTInputOutputOrder};
 use plonky2_util::{log2_strict, reverse_index_bits_in_place};
 use unroll::unroll_for_loops;
 
@@ -32,20 +34,44 @@ pub fn fft_root_table<F: Field>(n: usize) -> FftRootTable<F> {
     root_table
 }
 
+#[cfg(feature = "cuda")]
+fn fft_dispatch_gpu<F: Field>(
+    input: &mut [F],
+    zero_factor: Option<usize>,
+    root_table: Option<&FftRootTable<F>>,
+) {
+    // println!("gpu fft");
+    if F::CUDA_SUPPORT {
+        return ntt(0, input, NTTInputOutputOrder::NN);
+    } else {
+        return fft_dispatch_cpu(input, zero_factor, root_table);
+    }
+}
+
+fn fft_dispatch_cpu<F: Field>(
+    input: &mut [F],
+    zero_factor: Option<usize>,
+    root_table: Option<&FftRootTable<F>>,
+) {
+    if root_table.is_some() {
+        return fft_classic(input, zero_factor.unwrap_or(0), root_table.unwrap());
+    } else {
+        // TODO: add precompute NTT twiddle factors
+        let computed = fft_root_table::<F>(input.len());
+
+        return fft_classic(input, zero_factor.unwrap_or(0), computed.as_ref());
+    };
+}
+
 #[inline]
 fn fft_dispatch<F: Field>(
     input: &mut [F],
     zero_factor: Option<usize>,
     root_table: Option<&FftRootTable<F>>,
 ) {
-    let computed_root_table = if root_table.is_some() {
-        None
-    } else {
-        Some(fft_root_table(input.len()))
-    };
-    let used_root_table = root_table.or(computed_root_table.as_ref()).unwrap();
-
-    fft_classic(input, zero_factor.unwrap_or(0), used_root_table);
+    #[cfg(feature = "cuda")]
+    return fft_dispatch_gpu(input, zero_factor, root_table);
+    return fft_dispatch_cpu(input, zero_factor, root_table);
 }
 
 #[inline]
@@ -168,7 +194,6 @@ fn fft_classic_simd<P: PackedField>(
 /// definitely zero.
 pub(crate) fn fft_classic<F: Field>(values: &mut [F], r: usize, root_table: &FftRootTable<F>) {
     reverse_index_bits_in_place(values);
-
     let n = values.len();
     let lg_n = log2_strict(n);
 
@@ -181,7 +206,7 @@ pub(crate) fn fft_classic<F: Field>(values: &mut [F], r: usize, root_table: &Fft
     }
 
     // After reverse_index_bits, the only non-zero elements of values
-    // are at indices i*2^r for i = 0..n/2^r.  The loop below copies
+    // are at indices i*(2^r) for i = 0..n/(2^r).  The loop below copies
     // the value at i*2^r to the positions [i*2^r + 1, i*2^r + 2, ...,
     // (i+1)*2^r - 1]; i.e. it replaces the 2^r - 1 zeros following
     // element i*2^r with the value at i*2^r.  This corresponds to the
