@@ -30,6 +30,7 @@ use crate::plonk::plonk_common::PlonkOracle;
 use crate::plonk::proof::{CompressedProofWithPublicInputs, ProofWithPublicInputs};
 use crate::plonk::prover::prove;
 use crate::plonk::verifier::verify;
+use crate::timed;
 use crate::util::timing::TimingTree;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -116,11 +117,11 @@ impl<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D: usize>
     CircuitData<F, C, D>
 {
     pub fn prove(&self, inputs: PartialWitness<F>) -> Result<ProofWithPublicInputs<F, C, D>> {
-        prove(
-            &self.prover_only,
-            &self.common,
-            inputs,
-            &mut TimingTree::default(),
+        let mut tt: TimingTree = TimingTree::default();
+        timed!(
+            tt,
+            "plonk.circuit_data.prove",
+            prove(&self.prover_only, &self.common, inputs, &mut tt,)
         )
     }
 

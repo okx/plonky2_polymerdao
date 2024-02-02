@@ -1,6 +1,8 @@
 use alloc::format;
 use alloc::vec::Vec;
 
+#[cfg(feature = "cuda")]
+use cryptography_cuda::{ntt_batch, types::*};
 use itertools::Itertools;
 use maybe_rayon::*;
 
@@ -79,7 +81,7 @@ impl<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D: usize>
             Self::lde_values(&polynomials, rate_bits, blinding, fft_root_table)
         );
 
-        let mut leaves = timed!(timing, "transpose LDEs", transpose(&lde_values));
+        let mut leaves: Vec<Vec<F>> = timed!(timing, "transpose LDEs", transpose(&lde_values));
         reverse_index_bits_in_place(&mut leaves);
         let merkle_tree = timed!(
             timing,
@@ -103,10 +105,73 @@ impl<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D: usize>
         fft_root_table: Option<&FftRootTable<F>>,
     ) -> Vec<Vec<F>> {
         let degree = polynomials[0].len();
+        println!("degree: {:?}", degree);
+
+        let log_n =  log2_strict(degree) + rate_bits;
+        println!("log_n: {:?}", log_n);
 
         // If blinding, salt with two random elements to each leaf vector.
         let salt_size = if blinding { SALT_SIZE } else { 0 };
 
+        #[cfg(feature = "cuda")]
+        let num_gpus: usize = std::env::var("NUM_OF_GPUS")
+            .expect("NUM_OF_GPUS should be set")
+            .parse()
+            .unwrap();
+        #[cfg(feature = "cuda")]
+        println!("get num of gpus: {:?}", num_gpus);
+
+        let total_num_of_fft = polynomials.len();
+        println!("total_num_of_fft: {:?}", total_num_of_fft);
+        #[cfg(feature = "cuda")]
+        let per_device_batch = total_num_of_fft.div_ceil(num_gpus);
+
+        #[cfg(feature = "cuda")]
+        let chunk_size = total_num_of_fft.div_ceil(num_gpus);
+        #[cfg(feature = "cuda")]
+        println!("chunk_size: {:?}", chunk_size);
+
+        #[cfg(feature = "cuda")]
+        return polynomials
+            .par_chunks(chunk_size)
+            .enumerate()
+            .flat_map(|(id, poly_chunk)| {
+                let mut polys_coeffs: Vec<F> = poly_chunk
+                    .iter()
+                    .flat_map(|p| {
+                        let p_extended = p.lde(rate_bits);
+                        let modified_poly: PolynomialCoeffs<F> = F::coset_shift()
+                            .powers()
+                            .zip(&p_extended.coeffs)
+                            .map(|(r, &c)| r * c)
+                            .collect::<Vec<_>>()
+                            .into();
+                        modified_poly.coeffs
+                    })
+                    .collect();
+                
+                println!("invoking ntt_batch {:?}, {:?}, {:?}", id, chunk_size, log_n);
+                ntt_batch(
+                    id,
+                    &mut polys_coeffs,
+                    NTTInputOutputOrder::NN,
+                    per_device_batch as u32,
+                    log_n,
+                );
+                println!("after invoking ntt_batch, chunk_size: {:?}, polys_coeffs.len: {:?}", chunk_size, polys_coeffs.len());
+                polys_coeffs
+                    .chunks(1<<log_n)
+                    .map(|buffer| PolynomialValues::new(buffer.to_vec()).values)
+                    .collect::<Vec<Vec<F>>>()
+            })
+            .chain(
+                (0..salt_size)
+                    .into_par_iter()
+                    .map(|_| F::rand_vec(degree << rate_bits)),
+            )
+            .collect();
+
+        #[cfg(not(feature = "cuda"))]
         polynomials
             .par_iter()
             .map(|p| {
