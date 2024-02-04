@@ -56,7 +56,10 @@ impl<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D: usize>
             "IFFT",
             values.into_par_iter().map(|v| v.ifft()).collect::<Vec<_>>()
         );
+
+        #[cfg(feature = "cuda")]
         let degree = values[0].len();
+        #[cfg(feature = "cuda")]
         let log_n =  log2_strict(degree);
 
         #[cfg(feature = "cuda")]
