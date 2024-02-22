@@ -102,7 +102,7 @@ impl<F: RichField + Extendable<D>, const D: usize> SystemZero<F, D> {
                 .collect()
         );
 
-        timing.print();
+        // timing.print();
         trace_polys
     }
 }

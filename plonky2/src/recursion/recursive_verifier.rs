@@ -396,9 +396,9 @@ mod tests {
 
         let mut timing = TimingTree::new("prove", Level::Debug);
         let proof = prove(&data.prover_only, &data.common, pw, &mut timing)?;
-        if print_timing {
-            timing.print();
-        }
+        // if print_timing {
+        //     timing.print();
+        // }
 
         data.verify(proof.clone())?;
 
