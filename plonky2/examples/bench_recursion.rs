@@ -84,7 +84,7 @@ fn dummy_proof<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D
 
     let mut timing = TimingTree::new("prove", Level::Debug);
     let proof = prove(&data.prover_only, &data.common, inputs, &mut timing)?;
-    timing.print();
+    // timing.print();
     data.verify(proof.clone())?;
 
     Ok((proof, data.verifier_only, data.common))
@@ -134,7 +134,7 @@ where
 
     let mut timing = TimingTree::new("prove", Level::Debug);
     let proof = prove(&data.prover_only, &data.common, pw, &mut timing)?;
-    timing.print();
+    // timing.print();
 
     data.verify(proof.clone())?;
 

@@ -213,8 +213,8 @@ pub fn prove<F: RichField + Extendable<D>, C: GenericConfig<D, F = F>, const D: 
         openings,
         opening_proof,
     };
-    #[cfg(feature="timing")]
-    timing.print();
+    // #[cfg(feature="timing")]
+    // timing.print();
     Ok(ProofWithPublicInputs {
         proof,
         public_inputs,

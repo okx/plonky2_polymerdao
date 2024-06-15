@@ -685,7 +685,7 @@ mod tests {
             &mut timing,
         )?;
 
-        timing.print();
+        // timing.print();
         Ok(())
     }
 

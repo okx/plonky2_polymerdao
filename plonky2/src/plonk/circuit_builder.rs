@@ -926,7 +926,7 @@ impl<F: RichField + Extendable<D>, const D: usize> CircuitBuilder<F, D> {
             circuit_digest,
         };
 
-        timing.print();
+        // timing.print();
         #[cfg(feature = "std")]
         debug!("Building circuit took {}s", start.elapsed().as_secs_f32());
         CircuitData {

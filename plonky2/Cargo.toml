@@ -11,12 +11,13 @@ edition = "2021"
 default-run = "generate_constants"
 
 [features]
-default = ["gate_testing", "parallel", "rand_chacha", "std"]
+default = ["gate_testing", "parallel", "rand_chacha", "std", "timing"]
 gate_testing = []
 parallel = ["hashbrown/rayon", "maybe_rayon/parallel"]
 std = ["anyhow/std", "rand/std"]
 timing = ["std"]
 cuda =["cryptography_cuda"]
+batch =[]
 
 [dependencies]
 ahash = { version = "0.7.6", default-features = false, features = ["compile-time-rng"] } # NOTE: Be sure to keep this version the same as the dependency in `hashbrown`.

@@ -53,6 +53,7 @@ fn fft_dispatch_cpu<F: Field>(
     zero_factor: Option<usize>,
     root_table: Option<&FftRootTable<F>>,
 ) {
+    // println!("cpu fft: size: {:?}", log2_strict(input.len()));
     if root_table.is_some() {
         return fft_classic(input, zero_factor.unwrap_or(0), root_table.unwrap());
     } else {
@@ -69,8 +70,8 @@ fn fft_dispatch<F: Field>(
     zero_factor: Option<usize>,
     root_table: Option<&FftRootTable<F>>,
 ) {
-    #[cfg(feature = "cuda")]
-    return fft_dispatch_gpu(input, zero_factor, root_table);
+    // #[cfg(feature = "cuda")]
+    // return fft_dispatch_gpu(input, zero_factor, root_table);
     return fft_dispatch_cpu(input, zero_factor, root_table);
 }
 
